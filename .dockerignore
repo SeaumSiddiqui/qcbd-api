@@ -1,0 +1,24 @@
+# Maven build
+target/
+!target/*.jar
+
+# Logs and temporary files
+*.log
+*.tmp
+*.out
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+
+# Git and local env
+.git
+.gitignore
+.env*
+application-dev.yml
+application-local.yml
+
+# Test-related stuff
+src/test/
+test-output/

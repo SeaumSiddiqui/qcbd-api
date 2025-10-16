@@ -1,0 +1,44 @@
+# Build outputs
+/target/
+/build/
+/out/
+
+# Maven wrapper, local maven files
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Java temp / logs
+*.log
+logs/
+tmp/
+*.tmp
+hs_err_pid*
+*.class
+
+# Test reports / coverage
+/target/surefire-reports/
+/target/failsafe-reports/
+coverage/
+jacoco.exec
+
+# DO NOT commit any .env files with secrets
+.env
+.env.*
+!.env.example
+
+# Local Spring overrides (ignore local/development-only ymls)
+application-dev.yml
+# DO NOT ignore application-prod.yml by default because we want the prod config tracked
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
