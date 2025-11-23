@@ -45,6 +45,19 @@ public class OrphanApplicationService {
     private final UserService userService;
     private final ModelMapper modelMapper;
 
+    public Specification<OrphanApplication> buildSpecification(Authentication currentUser, String status, String createdBy, String lastReviewedBy, LocalDateTime createdStartDate, LocalDateTime createdEndDate, LocalDateTime lastModifiedStartDate, LocalDateTime lastModifiedEndDate, LocalDate dateOfBirthStartDate, LocalDate dateOfBirthEndDate, String id, String fullName, String bcRegistration, String fathersName, String gender, String physicalCondition, String permanentDistrict, String permanentSubDistrict) {
+
+        // Check if the user has ADMIN or MANAGEMENT role to determine access permissions.
+        if(!isAdminOrManagement(currentUser)) createdBy = currentUser.getName();
+        log.info("Requested username: {}", currentUser.getName());
+
+        // Build specification
+        return OrphanApplicationSpecification.buildSearchSpecification
+                (status, createdBy, lastReviewedBy, createdStartDate, createdEndDate, lastModifiedStartDate,
+                        lastModifiedEndDate, dateOfBirthStartDate, dateOfBirthEndDate, id, fullName, bcRegistration,
+                        fathersName, gender, physicalCondition, permanentDistrict, permanentSubDistrict);
+    }
+
     public Page<OrphanApplicationSummaryDTO> getAllApplication(Authentication currentUser, String status, String createdBy, String lastReviewedBy,
                                                                LocalDateTime createdStartDate, LocalDateTime createdEndDate,
                                                                LocalDateTime lastModifiedStartDate, LocalDateTime lastModifiedEndDate,
@@ -53,12 +66,8 @@ public class OrphanApplicationService {
                                                                String physicalCondition, String permanentDistrict, String permanentSubDistrict,
                                                                String sortField, String sortDirection, int page, int size) {
 
-        // Check if the user has ADMIN or MANAGEMENT role to determine access permissions.
-        if(!isAdminOrManagement(currentUser)) createdBy = currentUser.getName();
-        log.info("Requested username: {}", currentUser.getName());
         // Build specification
-        Specification<OrphanApplication> searchSpecification = OrphanApplicationSpecification.buildSearchSpecification
-                (status, createdBy, lastReviewedBy, createdStartDate, createdEndDate, lastModifiedStartDate,
+        Specification<OrphanApplication> searchSpecification = buildSpecification(currentUser, status, createdBy, lastReviewedBy, createdStartDate, createdEndDate, lastModifiedStartDate,
                         lastModifiedEndDate, dateOfBirthStartDate, dateOfBirthEndDate, id, fullName, bcRegistration,
                         fathersName, gender, physicalCondition, permanentDistrict, permanentSubDistrict);
 
