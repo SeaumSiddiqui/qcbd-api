@@ -33,6 +33,7 @@ public class OrphanApplication extends Program {
     private BasicInformation basicInformation;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    private Verification verification;
+    @Builder.Default
+    private Verification verification = new Verification();
 
 }

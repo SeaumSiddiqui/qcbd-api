@@ -3,9 +3,7 @@ package org.project.app.export;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.project.app.program.orphan.domain.OrphanApplication;
 import org.springframework.stereotype.Service;
@@ -39,28 +37,29 @@ public class ExcelExportService {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Export");
 
-        // Header
+        // Create bold header style
+        CellStyle headerStyle = createHeaderStyle(workbook);
+
+        // HEADER ROW
         Row headerRow = sheet.createRow(0);
 
         for (int i = 0; i < fields.size(); i++) {
-            String fieldName = fields.get(i);
+            String raw = fields.get(i);
+            String pretty = beautifyHeader(raw);
 
-            // Remove class name (dot-notation)
-            String cleanName = fieldName.contains(".")
-                    ? fieldName.substring(fieldName.lastIndexOf(".") + 1)
-                    : fieldName;
-
-            headerRow.createCell(i).setCellValue(cleanName);
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(pretty);
+            cell.setCellStyle(headerStyle);
         }
 
-        // Body
+        // BODY
         for (int rowIndex = 0; rowIndex < data.size(); rowIndex++) {
             Row row = sheet.createRow(rowIndex + 1);
             Object item = data.get(rowIndex);
 
             for (int col = 0; col < fields.size(); col++) {
-                String fieldName = fields.get(col);
-                Object val = readNestedField(item, fieldName);
+                String fieldPath = fields.get(col);
+                Object val = readNestedField(item, fieldPath);
 
                 row.createCell(col).setCellValue(
                         val != null ? val.toString() : ""
@@ -68,7 +67,7 @@ public class ExcelExportService {
             }
         }
 
-        // Auto-size AFTER all data is placed
+        // Auto-size columns
         for (int col = 0; col < fields.size(); col++) {
             sheet.autoSizeColumn(col);
         }
@@ -109,5 +108,29 @@ public class ExcelExportService {
             return null;
         }
     }
+
+    // Helpers
+    private String beautifyHeader(String raw) {
+        // Take only the last part after dot-notation
+        String clean = raw.contains(".")
+                ? raw.substring(raw.lastIndexOf(".") + 1)
+                : raw;
+
+        // Insert spaces before capitals: fathersName → fathers Name
+        clean = clean.replaceAll("([A-Z])", " $1").trim();
+
+        // Capitalize first letter
+        return clean.substring(0, 1).toUpperCase() + clean.substring(1);
+    }
+
+    private CellStyle createHeaderStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        return style;
+    }
+
+
 
 }

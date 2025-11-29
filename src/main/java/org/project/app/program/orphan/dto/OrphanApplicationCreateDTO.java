@@ -17,6 +17,5 @@ public class OrphanApplicationCreateDTO {
     private AddressDTO address;
     private List<FamilyMemberDTO> familyMembers;
     private BasicInformationDTO basicInformation;
-    private VerificationDTO verification;
 
 }

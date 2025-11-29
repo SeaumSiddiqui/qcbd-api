@@ -22,7 +22,6 @@ public class OrphanApplicationUpdateDTO {
     private AddressDTO address;
     private List<FamilyMemberDTO> familyMembers;
     private BasicInformationDTO basicInformation;
-    private VerificationDTO verification;
 
     @NotNull
     private Long version;

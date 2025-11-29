@@ -43,9 +43,6 @@ public class OrphanModelMapperCustomizer implements ModelMapperCustomizer {
         mapper.createTypeMap(BasicInformationDTO.class, BasicInformation.class)
                 .addMappings(m -> m.skip(BasicInformation::setId));
 
-        mapper.createTypeMap(VerificationDTO.class, Verification.class)
-                .addMappings(m -> m.skip(Verification::setId));
-
         mapper.createTypeMap(FamilyMemberDTO.class, FamilyMember.class)
                 .addMappings(m -> {
                     m.skip(FamilyMember::setId);

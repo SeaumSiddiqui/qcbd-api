@@ -24,6 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
@@ -147,7 +148,35 @@ public class OrphanApplicationService {
         application.setBeneficiary(userService.getUserExtraById(dto.getBeneficiaryUserId())
                 .orElseThrow(()-> new UserNotFoundException("Beneficiary user not found")));
 
+        // Set agent ID on creation
+        application.getVerification().setAgentUserId(getCurrentUserId(currentUser));
+        log.info("Agent Id on application creation: {}", getCurrentUserId(currentUser));
+
         return formattedResponse(applicationRepository.save(application));
+    }
+
+    /**
+     * Extracts the Keycloak user ID (UUID) from Authentication.
+     * Keycloak stores the user ID in the "sub" claim.
+     */
+    public static String getCurrentUserId(Authentication authentication) {
+        if (authentication == null) {
+            throw new IllegalStateException("Authentication object is null");
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof Jwt jwt)) {
+            throw new IllegalStateException("Authentication principal is not a JWT token");
+        }
+
+        String userId = jwt.getClaim("sub");
+
+        if (userId == null) {
+            throw new IllegalStateException("'sub' claim not found in JWT");
+        }
+
+        return userId;
     }
 
     private OrphanApplicationResponseDTO formattedResponse(OrphanApplication application) {
@@ -182,39 +211,35 @@ public class OrphanApplicationService {
 
         // Update collections
         updateFamilyMembers(existing, updateDTO.getFamilyMembers());
-        //updateDocuments(existing, updateDTO.getDocuments());
+
+        // Update verification entity
+        updateVerification(existing, currentUser, updateDTO.getStatus());
 
         return applicationRepository.save(existing);
     }
 
-    private void updateNestedEntities(OrphanApplicationUpdateDTO updateDTO, OrphanApplication existing) {
-        if (updateDTO.getStatus() == GRANTED && existing.getEnrollment() == null) {
-            enrollmentService.createEnrollment(existing);
-        }
+    private void updateVerification(OrphanApplication existing, Authentication currentUser, ApplicationStatus status) {
 
-        if (updateDTO.getPrimaryInformation() != null) {
-            if (existing.getPrimaryInformation() == null) {
-                existing.setPrimaryInformation(new PrimaryInformation());
-            }
-            modelMapper.map(updateDTO.getPrimaryInformation(), existing.getPrimaryInformation());
-        }
-        if (updateDTO.getAddress() != null) {
-            if (existing.getAddress() == null) {
-                existing.setAddress(new Address());
-            }
-            modelMapper.map(updateDTO.getAddress(), existing.getAddress());
-        }
-        if (updateDTO.getBasicInformation() != null) {
-            if (existing.getBasicInformation() == null) {
-                existing.setBasicInformation(new BasicInformation());
-            }
-            modelMapper.map(updateDTO.getBasicInformation(), existing.getBasicInformation());
-        }
-        if (updateDTO.getVerification() != null) {
-            if (existing.getVerification() == null) {
-                existing.setVerification(new Verification());
-            }
-            modelMapper.map(updateDTO.getVerification(), existing.getVerification());
+        Verification existingVerification = existing.getVerification();
+
+        switch (status) {
+            case INCOMPLETE :
+            case COMPLETE :
+            case PENDING :
+                existingVerification.setAgentUserId(getCurrentUserId(currentUser));
+                break;
+
+            case ACCEPTED:
+            case REJECTED:
+                existingVerification.setAuthenticatorUserId(getCurrentUserId(currentUser));
+                break;
+
+            case GRANTED:
+                existingVerification.setInvestigatorUserId(getCurrentUserId(currentUser));
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported application status: " + status);
         }
     }
 
@@ -257,6 +282,37 @@ public class OrphanApplicationService {
         }
     }
 
+    private void updateNestedEntities(OrphanApplicationUpdateDTO updateDTO, OrphanApplication existing) {
+        if (updateDTO.getStatus() == GRANTED && existing.getEnrollment() == null) {
+            enrollmentService.createEnrollment(existing);
+        }
+
+        if (updateDTO.getPrimaryInformation() != null) {
+            if (existing.getPrimaryInformation() == null) {
+                existing.setPrimaryInformation(new PrimaryInformation());
+            }
+            modelMapper.map(updateDTO.getPrimaryInformation(), existing.getPrimaryInformation());
+        }
+        if (updateDTO.getAddress() != null) {
+            if (existing.getAddress() == null) {
+                existing.setAddress(new Address());
+            }
+            modelMapper.map(updateDTO.getAddress(), existing.getAddress());
+        }
+        if (updateDTO.getBasicInformation() != null) {
+            if (existing.getBasicInformation() == null) {
+                existing.setBasicInformation(new BasicInformation());
+            }
+            modelMapper.map(updateDTO.getBasicInformation(), existing.getBasicInformation());
+        }
+    }
+
+    private void checkVersion(OrphanApplication existing, @NotNull Long version) {
+        if (!existing.getVersion().equals(version)) {
+            throw new OptimisticLockException("Application has been modified by another user");
+        }
+    }
+
     /**
      * Checks user permissions for updating applications based on roles and status.
 
@@ -276,12 +332,6 @@ public class OrphanApplicationService {
         if (getUserRole(currentUser).contains(QC_SERVER_AGENT) && (status.equals(INCOMPLETE) || (status.equals(COMPLETE)) || (status.equals(REJECTED)))) return;
 
         throw new AccessDeniedException("Update forbidden for " + getUserRole(currentUser) + " on status " + status);
-    }
-
-    private void checkVersion(OrphanApplication existing, @NotNull Long version) {
-        if (!existing.getVersion().equals(version)) {
-            throw new OptimisticLockException("Application has been modified by another user");
-        }
     }
 
     public void deleteApplication(String id) {

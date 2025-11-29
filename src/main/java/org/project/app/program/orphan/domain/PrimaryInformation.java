@@ -27,7 +27,7 @@ public class PrimaryInformation {
     private LocalDate dateOfBirth;
     @NotBlank(message = "registration number is required")
     private String bcRegistration;
-    private String Nationality;
+    private String nationality;
     private String placeOfBirth;
     @Max(11)
     private int age;
