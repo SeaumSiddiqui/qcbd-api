@@ -34,11 +34,13 @@ spring:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI}
 
-# -------------- CORS Configuration --------------
-# Adjust allowed origins for your frontend. In PROD, set APP_ALLOWED_ORIGINS to your actual domain.
-app:
-  cors:
-    allowed-origins: ${APP_ALLOWED_ORIGINS}
+# -------------- Keycloak admin Configuration --------------
+keycloak:
+  admin:
+    server-url: ${KEYCLOAK_ADMIN_SERVER_URL}
+    realm: ${KEYCLOAK_ADMIN_REALM}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
 
 # -------------- Keycloak realm Configuration --------------
 jwt:
@@ -46,6 +48,11 @@ jwt:
     converter:
       resource-id: ${JWT_AUTH_CONVERTER_RESOURCE_ID}
       principal-attribute: ${JWT_AUTH_CONVERTER_PRINCIPAL_ATTRIBUTE}
+
+# -------------- CORS Configuration --------------
+app:
+  cors:
+    allowed-origins: ${APP_ALLOWED_ORIGINS}
 
 # ----------- AWS Cloud (S3) Configuration ----------
 aws:
