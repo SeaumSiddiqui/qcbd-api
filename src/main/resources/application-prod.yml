@@ -5,9 +5,9 @@ spring:
 
   # ---------------- Datasource (MySQL) ----------------
   datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ------------ JPA / Hibernate Settings -------------
